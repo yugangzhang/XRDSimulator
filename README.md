@@ -66,8 +66,10 @@ fig.show()
 # %matplotlib inline
 # from xrdsimulator import interactive_simulation
 # interactive_simulation()
+```
 
 ---
+
 ## 🧠 Understanding the Simulation
 
 This simulation is built on the principles of crystallographic rotation, Bragg's Law, and vector geometry.
@@ -80,9 +82,9 @@ The orientation of the crystal's (111) plane is controlled by three rotations ap
 
 $$R = R_X(\chi) R_Y(\theta) R_Z(\phi)$$
 
--   **Rotation around Z-axis ($\phi$):** This is an azimuthal rotation around the initial surface normal. For the (111) plane, this rotation has no effect on diffraction since the normal vector lies on the rotation axis.
--   **Rotation around Y-axis ($\theta$, Rocking Scan):** This is the **most critical rotation**. A diffraction spot only appears when $\theta$ is almost exactly the Bragg angle ($\theta_B$). A plot of intensity vs. $\theta$ is called a **rocking curve**. For a perfect single crystal, this peak is extremely narrow.
--   **Rotation around X-axis ($\chi$, Beam Direction):** If the Bragg condition is already met (i.e., $\theta = \theta_B$), rotating around the incoming beam axis will cause the diffraction spot to trace a circle on the detector. This circle is the intersection of the **Debye-Scherrer cone** with the flat detector plane.
+- **Rotation around Z-axis ($\phi$):** This is an azimuthal rotation around the initial surface normal. For the (111) plane, this rotation has no effect on diffraction since the normal vector lies on the rotation axis.
+- **Rotation around Y-axis ($\theta$, Rocking Scan):** This is the **most critical rotation**. A diffraction spot only appears when $\theta$ is almost exactly the Bragg angle ($\theta_B$). A plot of intensity vs. $\theta$ is called a **rocking curve**. For a perfect single crystal, this peak is extremely narrow.
+- **Rotation around X-axis ($\chi$, Beam Direction):** If the Bragg condition is already met (i.e., $\theta = \theta_B$), rotating around the incoming beam axis will cause the diffraction spot to trace a circle on the detector. This circle is the intersection of the **Debye-Scherrer cone** with the flat detector plane.
 
 ---
 
@@ -97,8 +99,8 @@ The intensity of the diffraction spot is modeled using a **Gaussian distribution
 $$I = \exp\left( - \left( \frac{\theta - \theta_B}{W} \right)^2 \right)$$
 
 Where:
--   $\theta - \theta_B$ is the deviation from the Bragg angle in degrees.
--   $W$ is the peak width (a standard deviation of $1^\circ$ is used in the code).
+- $\theta - \theta_B$ is the deviation from the Bragg angle in degrees.
+- $W$ is the peak width (a standard deviation of $1^\circ$ is used in the code).
 
 ---
 
@@ -108,8 +110,8 @@ If the Bragg condition is met, the simulator calculates the direction of the dif
 
 $$\vec{k}_{\text{out}} = \vec{k}_{\text{in}} - 2(\vec{k}_{\text{in}} \cdot \vec{n}) \vec{n}$$
 
--   $\vec{k}_{\text{in}}$ is the incoming beam vector, fixed along the X-axis: $(1, 0, 0)$.
--   $\vec{n}$ is the normal vector of the (111) plane after rotation.
+- $\vec{k}_{\text{in}}$ is the incoming beam vector, fixed along the X-axis: $(1, 0, 0)$.
+- $\vec{n}$ is the normal vector of the (111) plane after rotation.
 
 The coordinates $(y, z)$ of the diffraction spot are then calculated by finding where the $\vec{k}_{\text{out}}$ vector intersects the detector plane, which is fixed at a distance $L$ from the crystal.
 
@@ -118,18 +120,18 @@ The coordinates $(y, z)$ of the diffraction spot are then calculated by finding 
 ## 🛠️ Limitations & Future Improvements
 
 ### Current Limitations
--   **Single Plane:** Only simulates diffraction from the (111) plane of an FCC crystal.
--   **Monochromatic Beam:** Assumes a perfectly monochromatic X-ray beam.
--   **Ideal Crystal:** Does not account for real-world effects like mosaic spread, beam divergence, or orientation distribution.
--   **Simple Intensity Model:** Uses a Gaussian model, not a full dynamical or kinematical diffraction theory.
--   **Fixed Detector:** Assumes a flat detector in the YZ plane.
+- **Single Plane:** Only simulates diffraction from the (111) plane of an FCC crystal.
+- **Monochromatic Beam:** Assumes a perfectly monochromatic X-ray beam.
+- **Ideal Crystal:** Does not account for real-world effects like mosaic spread, beam divergence, or orientation distribution.
+- **Simple Intensity Model:** Uses a Gaussian model, not a full dynamical or kinematical diffraction theory.
+- **Fixed Detector:** Assumes a flat detector in the YZ plane.
 
 ### Potential Future Work
--   Support for multiple crystallographic planes: (100), (110), etc.
--   Visualization of the Ewald sphere and reciprocal space.
--   Simulation of multiple wavelengths or continuous spectra.
--   Integration of effects like sample mosaicity or beam divergence.
--   Ability to export interactive or static snapshots as images or videos.
+- Support for multiple crystallographic planes: (100), (110), etc.
+- Visualization of the Ewald sphere and reciprocal space.
+- Simulation of multiple wavelengths or continuous spectra.
+- Integration of effects like sample mosaicity or beam divergence.
+- Ability to export interactive or static snapshots as images or videos.
 
 ---
 
@@ -139,6 +141,5 @@ For suggestions, bug reports, or feature requests, please contact:
 
 **Dr. Yugang Zhang** Brookhaven National Laboratory  
 📧 yuzhang@bnl.gov
-
 
 
