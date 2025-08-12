@@ -4,7 +4,7 @@
 
 This project provides an interactive simulation of single-crystal X-ray diffraction from the (111) plane of an FCC crystal. It visualizes the diffraction geometry, detector signal, and rocking curve as a function of crystal rotation, lattice constant, and X-ray wavelength.
 
-**
+
 ![XRDSimulator Screenshot](./assets/simulator_screenshot.png) 
 
 ---
@@ -67,6 +67,7 @@ fig.show()
 # from xrdsimulator import interactive_simulation
 # interactive_simulation()
 
+---
 ## 🧠 Understanding the Simulation
 
 This simulation is built on the principles of crystallographic rotation, Bragg's Law, and vector geometry.
