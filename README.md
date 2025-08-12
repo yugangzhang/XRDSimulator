@@ -111,7 +111,7 @@ If the Bragg condition is met, the simulator calculates the direction of the dif
 k_out = k_in - 2(k_in ⋅ n) n
 
    $\vec{k}_{\text{out}}$ =  $\vec{k}_{\text{in}}$ - 2 ($\vec{k}_{\text{in}}$ $\cdot$ $\vec{n}$)  $\vec{n}$ 
- 
+$$\vec{k}_{out} = \vec{k}_{in} - 2(\vec{k}_{in} \cdot \vec{n}) \vec{n}$$ 
 
 - $\vec{k}_{\text{in}}$ is the incoming beam vector, fixed along the X-axis: $(1, 0, 0)$.
 - $\vec{n}$ is the normal vector of the (111) plane after rotation.
