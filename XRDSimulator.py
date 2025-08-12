@@ -204,51 +204,106 @@ class XRDSimulator:
         matplotlib.Figure object for display.
 
         """
-        fig = plt.figure(figsize=(12, 9))
-        fig.suptitle(f"χ={chi_deg:.1f}°, θ={theta_deg:.1f}°, φ={phi_deg:.1f}°", fontsize=14)
-        
-        # 1. 3-D view (unchanged)
-        ax3d = fig.add_subplot(221, projection='3d')
-        ax3d.set_box_aspect([1, 1, 1])
-        # lab axes
-        ax3d.quiver([0,0,0], [0,0,0], [0,0,0], [1,0,0], [0,1,0], [0,0,1], length=0.8, color='k', linewidth=1)
-        # (111) normal after rotation
-        n = self.rotate_crystal(chi_deg=chi_deg, theta_deg=theta_deg, phi_deg=phi_deg)
-        ax3d.quiver(0, 0, 0, n[0], n[1], n[2], length=0.8, color='purple', linewidth=3, label='(111) normal')
-        ax3d.set_xlabel('x'); ax3d.set_ylabel('y'); ax3d.set_zlabel('z')
-        ax3d.set_title('3-D View')
-        ax3d.legend()
+        from matplotlib.gridspec import GridSpec
+        #fig = plt.figure(figsize=(14, 9))
+        fig = plt.figure(figsize=(14, 9), constrained_layout=True)
 
-        # 2. Detector view (unchanged)
-        ax_det = fig.add_subplot(222)
+        fig.suptitle(f"χ={chi_deg:.1f}°, θ={theta_deg:.1f}°, φ={phi_deg:.1f}°", fontsize=14)
+        gs = GridSpec(nrows=2, ncols=3, figure=fig)
+        ax3d    = fig.add_subplot(gs[:, :2], projection='3d')  # big 3D plot spans 2 rows, 2 cols
+        ax_det  = fig.add_subplot(gs[0, 2])                    # top right
+        ax_bragg = fig.add_subplot(gs[1, 2])                   # bottom right    
+        # ------------------------------------------------------------
+        # 1. 3D View – Beam, Plane Normal, Detector Plane
+        # ------------------------------------------------------------
+        #ax3d = fig.add_subplot(221, projection='3d')
+        ax3d.set_box_aspect([1, 1, 1])
+    
+        # Plot lab axes
+        axes_length = 1.0
+        ax3d.quiver(0, 0, 0, 1, 0, 0, color='k', linewidth=1, arrow_length_ratio=0.1)
+        #ax3d.text(1.05, 0, 0, '[100]', color='k')
+        ax3d.text(1.25, 0, 0, 'x', color='k')
+        ax3d.quiver(0, 0, 0, 0, 1, 0, color='k', linewidth=1, arrow_length_ratio=0.1)
+        #ax3d.text(0, 1.05, 0, '[010]', color='k')
+        ax3d.text(0, 1.25, 0, 'y', color='k')
+        ax3d.quiver(0, 0, 0, 0, 0, 1, color='k', linewidth=1, arrow_length_ratio=0.1)
+        #ax3d.text(0, 0, 1.05, '[001]', color='k')
+        ax3d.text(0, 0, 1.25, 'z', color='k')
+    
+        # Beam direction (incident)
+        ax3d.quiver(0, 0, 0, 1, 0, 0, color='blue', linewidth=2, arrow_length_ratio=0.1)
+        ax3d.text(0.9, 0.1, 0.1, 'k_in →', color='blue')
+    
+        # Rotated (111) normal
+        n = self.rotate_crystal(chi_deg, theta_deg, phi_deg)
+        ax3d.quiver(0, 0, 0, n[0], n[1], n[2], color='purple', linewidth=3, arrow_length_ratio=0.1)
+        ax3d.text(n[0]*1.1, n[1]*1.1, n[2]*1.1, '(111)', color='purple')
+    
+        # Optional: Bragg-reflected ray
         det_y, det_z, intensity = self.calculate_diffraction(n)
+        if intensity > 0.01:
+            k_in_norm = self.k_in / np.linalg.norm(self.k_in)
+            k_out = k_in_norm - 2 * np.dot(k_in_norm, n) * n
+            ax3d.quiver(0, 0, 0, k_out[0], k_out[1], k_out[2], color='red', linewidth=2, arrow_length_ratio=0.1)
+            ax3d.text(k_out[0], k_out[1], k_out[2], 'k_out →', color='red')
+    
+        # Detector plane
+        d = self.detector_distance
+        # Detector surface grid (at x = detector_distance)
+        plane_size = self.detector_size / 100  # scale to match axes (~2x2 units)
+        x_det = np.full((2, 2), self.detector_distance / 100)
+        y_det = np.array([[-1, 1], [-1, 1]]) * (plane_size / 2)
+        z_det = np.array([[-1, -1], [1, 1]]) * (plane_size / 2)        
+        ax3d.plot_surface(x_det, y_det, z_det, color='gray', alpha=0.2, edgecolor='none')    
+        ax3d.set_xlim(-1, 1)
+        ax3d.set_ylim(-1, 1)
+        ax3d.set_zlim(-1, 1)
+        ax3d.set_xlabel('X')
+        ax3d.set_ylabel('Y')
+        ax3d.set_zlabel('Z')
+        ax3d.set_title('3D Diffraction Geometry')
+    
+        # ------------------------------------------------------------
+        # 2. Detector View
+        # ------------------------------------------------------------
+        #ax_det = fig.add_subplot(222)
         if intensity > 0.01:
             circ = Circle((det_y, det_z), radius=2 + 15 * intensity, color='red', alpha=0.7)
             ax_det.add_patch(circ)
-        ax_det.set_xlim(-self.detector_size/2, self.detector_size/2); ax_det.set_ylim(-self.detector_size/2, self.detector_size/2)
-        ax_det.set_xlabel('Y (mm)'); ax_det.set_ylabel('Z (mm)')
-        ax_det.set_title('Detector View'); ax_det.grid(True, ls='--', alpha=0.5); ax_det.set_aspect('equal')
-
-        # 3. Bragg-analysis (θ-scan) -- THIS IS THE NEW, ACCURATE PLOT
-        ax_bragg = fig.add_subplot(223)
+        ax_det.set_xlim(-self.detector_size/2, self.detector_size/2)
+        ax_det.set_ylim(-self.detector_size/2, self.detector_size/2)
+        ax_det.set_xlabel('Y (mm)')
+        ax_det.set_ylabel('Z (mm)')
+        ax_det.set_title('Detector View')
+        ax_det.grid(True, ls='--', alpha=0.5)
+        ax_det.set_aspect('equal')
+    
+        # ------------------------------------------------------------
+        # 3. Rocking Curve (θ-scan)
+        # ------------------------------------------------------------
+        #ax_bragg = fig.add_subplot(223)
         theta_scan_range = np.linspace(theta_deg - 15, theta_deg + 15, 100)
         intensity_curve = []
-        # Calculate the true intensity curve for the current chi and phi
         for th_val in theta_scan_range:
             temp_normal = self.rotate_crystal(chi_deg, th_val, phi_deg)
             _, _, temp_intensity = self.calculate_diffraction(temp_normal)
             intensity_curve.append(temp_intensity)
         
-        ax_bragg.plot(theta_scan_range, intensity_curve, color='steelblue', label=f'Rocking curve at χ={chi_deg:.1f}, φ={phi_deg:.1f}')
+        ax_bragg.plot(theta_scan_range, intensity_curve, color='steelblue',
+                      label=f'Rocking curve at χ={chi_deg:.1f}°, φ={phi_deg:.1f}°')
         ax_bragg.axvline(theta_deg, color='purple', lw=2, label=f'Current θ={theta_deg:.1f}°')
         ax_bragg.set_xlabel('θ (Y-rotation) [degrees]')
         ax_bragg.set_ylabel('Calculated Intensity')
         ax_bragg.set_title('Calculated θ-scan (Rocking Curve)')
-        ax_bragg.legend(); ax_bragg.grid(True, alpha=0.4)
-
-        # 4. Info panel (updated for clarity)
-        ax_info = fig.add_subplot(224)
-        ax_info.axis('off')
+        ax_bragg.legend()
+        ax_bragg.grid(True, alpha=0.4)
+    
+        # ------------------------------------------------------------
+        # 4. Info Panel
+        # ------------------------------------------------------------
+        # ax_info = fig.add_subplot(224)
+        # ax_info.axis('off')
         theta_bragg_deg = np.degrees(self.theta_bragg)
         txt = (
             f"CRYSTAL & BEAM\n"
@@ -256,17 +311,32 @@ class XRDSimulator:
             f"  λ         = {self.wavelength:.3f} Å\n"
             f"  d₁₁₁      = {self.d111:.3f} Å\n"
             f"  Bragg θ_B = {theta_bragg_deg:.2f}° (glancing)\n\n"
-            f"STATUS\n"
+            #f"STATUS\n"
         )
         if intensity > 0.01:
-             txt += (f"  ✓ Bragg Condition Met\n"
-                     f"  Spot (Y,Z)  = ({det_y:.1f}, {det_z:.1f}) mm\n"
-                     f"  Intensity   = {intensity:.3f}")
+            txt += (
+                f"\N{WHITE HEAVY CHECK MARK}  Bragg Condition Met\n"
+                f"Spot (Y,Z)  = ({det_y:.1f}, {det_z:.1f}) mm\n"
+                f"Intensity   = {intensity:.3f}"
+            )
+            box_color = '#d6f5d6'  # light green background
+            text_color = 'green'
         else:
-             txt += "  ✗ Not in Bragg Condition"
-        ax_info.text(0.05, 0.95, txt, fontsize=11, family='monospace', verticalalignment='top')
-        ax_info.set_title('Info Panel')
-        fig.tight_layout(rect=[0, 0, 1, 0.96])
+            txt += "✗ Not in Bragg Condition"
+            box_color = '#f5d6d6'  # light red background
+            text_color = 'red'
+
+        #ax_info.text(0.05, 0.95, txt, fontsize=11, family='monospace', verticalalignment='top')
+        #ax_info.set_title('Info Panel')
+        # Display in top right of ax_bragg
+        ax_bragg.text(1.05, 0.95, txt,
+              transform=ax_bragg.transAxes,
+              fontsize=10,
+              va='top', ha='left',
+              family='monospace',
+              color=text_color,
+              bbox=dict(facecolor=box_color, alpha=0.6, edgecolor='gray', boxstyle='round,pad=0.4') )
+        #fig.tight_layout(rect=[0, 0, 1, 0.96])
         return fig
 
 # --------------------------------------------------------------
@@ -274,48 +344,92 @@ class XRDSimulator:
 # --------------------------------------------------------------
 sim = XRDSimulator()
 
+sim = XRDSimulator()
+
 def interactive_simulation():
     '''
+    Interactive simulation for single-crystal X-ray diffraction from the (111) plane
+    of an FCC crystal, using a Bragg-reflection geometry.
 
-    By playing with this simulator, you will find:
-        Rotation Around the Y-Axis (Rocking Scan)
-        This is the most critical rotation for finding a spot.
-        
-        Position: The spot only appears when the rotation angle is almost exactly 
-        theta_B. Its position on the detector remains fixed on the z-axis.
-        
-        Intensity: The intensity is zero far from 
-        theta_B. As you rotate towards 
-        theta_B, the intensity sharply rises to a maximum and then quickly falls back to zero. A plot of intensity versus this rotation angle is called a rocking curve. For a good single crystal, the peak is extremely narrow (often less than a degree).
-        
-        Rotation Around the X-Axis (Beam Direction)
-        This rotation is performed while the Bragg condition is already met.
-        
-        Position: The diffraction spot will move in a circle on the detector. The center of the circle is the position of the direct, undiffracted beam, and its radius is R=L
-        tan(2
-        theta_B). This circular path is the intersection of the cone of diffracted rays (called a Debye-Scherrer cone) with your flat detector.
-        
-        Intensity: The spot remains "on" (diffracting) throughout this entire rotation. Ideally, its intensity would be constant.
-        
-        Rotation Around the Z-Axis (Initial Normal Direction)
-        This rotation is performed from the initial state where the (111) normal is along the z-axis.
-        
-        Position & Intensity: Nothing happens. The (111) plane's normal vector lies along the rotation axis, so its orientation in space doesn't change. The plane remains parallel to the beam, the Bragg condition is never met, and the spot never appears.
+    -----------------------------------------------------------
+    GEOMETRY SETUP:
+    -----------------------------------------------------------
 
+    • Incident X-ray beam travels along the +X direction:
+        --> k_in = [1, 0, 0]  ← [100] in crystal/lab space
+
+    • Initial (111) crystal plane has its normal aligned along +Z:
+        --> n_111 = [0, 0, 1]  ← [111] is parallel to lab-frame [001]
+
+    • Detector is a flat square positioned perpendicular to the beam:
+        --> Located at X = L, spanning the YZ plane (200 mm × 200 mm)
+
+    -----------------------------------------------------------
+    ROTATION CONTROLS:
+    -----------------------------------------------------------
+
+    ▶️ χ (X-rotation): Rotation around beam direction (X)
+        • Spot moves in a circle (Debye-Scherrer cone) if Bragg is already satisfied.
+        • Radius = L · tan(2θ_B)
+        • Intensity remains "on" throughout χ rotation.
+
+    ▶️ θ (Y-rotation): Rocking scan
+        • Controls whether Bragg condition is met.
+        • Spot appears sharply only when θ ≈ Bragg angle (θ_B).
+        • Results in narrow peak in rocking curve.
+
+    ▶️ φ (Z-rotation): Rotation around (111) normal
+        • Has no effect — the plane normal is unchanged.
+        • No diffraction unless other angles are correct.
+
+    -----------------------------------------------------------
+    OBSERVATIONS:
+    -----------------------------------------------------------
+
+    ✔️ Y-Rotation (θ):
+        • Most sensitive angle. A small deviation from θ_B suppresses intensity.
+        • Produces sharp Gaussian-shaped rocking curve.
+
+    ✔️ X-Rotation (χ):
+        • Causes diffraction spot to move in a circle.
+        • Useful for visualizing cone of diffracted rays.
+
+    ✔️ Z-Rotation (φ):
+        • No effect — the normal vector is unchanged.
+        • Bragg condition cannot be satisfied alone.
+
+    -----------------------------------------------------------
+    UI DESCRIPTION:
+    -----------------------------------------------------------
+
+    This widget interface includes sliders and input boxes for:
+        - χ, θ, φ: Rotation angles in degrees
+        - a: Lattice constant (Å)
+        - λ: X-ray wavelength (Å)
+
+    Live updates include:
+        - 3D geometry of beam and rotated plane
+        - Detector view with diffraction spot (if any)
+        - Rocking curve (θ-scan)
+        - Info panel with simulation parameters and status
     '''
+
     def linked_pair(label, min_, max_, step_, init_):
         sld = widgets.FloatSlider(value=init_, min=min_, max=max_, step=step_, description=label, layout=widgets.Layout(width='70%'), continuous_update=False)
         txt = widgets.BoundedFloatText(value=init_, min=min_, max=max_, step=step_, layout=widgets.Layout(width='25%'))
         widgets.jslink((sld, 'value'), (txt, 'value'))
         return sld, txt
 
+    # Rotation sliders
     chi_sld, chi_txt = linked_pair('χ (X-rot)', -180, 180, 0.1, 0.0)
     th_sld,  th_txt  = linked_pair('θ (Y-rot)', -90, 90, 0.1, 0.0)
     phi_sld, phi_txt = linked_pair('φ (Z-rot)', -90, 90, 0.1, 0.0)
 
+    # Lattice & wavelength sliders
     a_sld = widgets.FloatSlider(value=sim.a, min=2.0, max=6.0, step=0.01, description='a (Å)', continuous_update=False)
     lam_sld = widgets.FloatSlider(value=sim.wavelength, min=0.5, max=3.0, step=0.01, description='λ (Å)', continuous_update=False)
 
+    # Layout
     out = widgets.Output()
     row_chi = widgets.HBox([chi_sld, chi_txt])
     row_th  = widgets.HBox([th_sld,  th_txt])
@@ -323,6 +437,7 @@ def interactive_simulation():
     row_mat = widgets.HBox([a_sld, lam_sld])
     ui = widgets.VBox([out, row_chi, row_th, row_phi, row_mat])
 
+    # Plot updater
     def _draw(_=None):
         sim.a = a_sld.value
         sim.wavelength = lam_sld.value
@@ -330,14 +445,20 @@ def interactive_simulation():
         sim.theta_bragg = np.arcsin(sim.wavelength / (2 * sim.d111))
         with out:
             clear_output(wait=True)
-            fig = sim.visualize_setup(chi_deg=chi_sld.value, theta_deg=th_sld.value, phi_deg=phi_sld.value)
+            fig = sim.visualize_setup(
+                chi_deg=chi_sld.value,
+                theta_deg=th_sld.value,
+                phi_deg=phi_sld.value
+            )
             plt.show(fig)
 
+    # Attach callbacks
     for w in (chi_sld, th_sld, phi_sld, chi_txt, th_txt, phi_txt, a_sld, lam_sld):
         w.observe(_draw, names='value')
 
     display(ui)
     _draw()
+
 
 # --- RUN THE INTERACTIVE UI ---
 # (Make sure to run this in a Jupyter Notebook or JupyterLab environment)
