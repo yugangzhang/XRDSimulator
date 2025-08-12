@@ -109,6 +109,7 @@ Where:
 If the Bragg condition is met, the simulator calculates the direction of the diffracted X-ray beam, $\vec{k}_{\text{out}}$, using the law of reflection:
 
 k_out = k_in - 2(k_in ⋅ n) n
+$$\vec{k}_{out} = \vec{k}_{in} - 2(\vec{k}_{in} \cdot \vec{n}) \vec{n}$$
 ```python
 $$\vec{k}_{out} = \vec{k}_{in} - 2(\vec{k}_{in} \cdot \vec{n}) \vec{n}$$
 ```
